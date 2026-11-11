@@ -1,0 +1,282 @@
+
+
+-- T1ST DICE | RAIN EDITION
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local colors = {
+    Red = Color3.fromRGB(255,65,65),
+    Blue = Color3.fromRGB(65,130,255),
+    Green = Color3.fromRGB(65,220,115),
+    Yellow = Color3.fromRGB(255,210,65),
+    Purple = Color3.fromRGB(175,90,255),
+    Orange = Color3.fromRGB(255,140,50)
+}
+
+local enabled = {}
+for name in pairs(colors) do enabled[name] = true end
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "T1ST_DICE"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+-- RAIN BACKGROUND
+local rainLayer = Instance.new("Frame")
+rainLayer.Size = UDim2.fromScale(1,1)
+rainLayer.BackgroundTransparency = 1
+rainLayer.ClipsDescendants = true
+rainLayer.Parent = gui
+
+local rainDrops = {}
+
+for i = 1,65 do
+    local drop = Instance.new("Frame")
+    drop.Size = UDim2.fromOffset(1,math.random(8,18))
+    drop.Position = UDim2.fromScale(
+        math.random(),
+        math.random()
+    )
+    drop.BackgroundColor3 = Color3.fromRGB(120,160,190)
+    drop.BackgroundTransparency = 0.45
+    drop.BorderSizePixel = 0
+    drop.Parent = rainLayer
+
+    table.insert(rainDrops,{
+        object = drop,
+        speed = math.random(50,110)
+    })
+end
+
+local rainConnection = RunService.RenderStepped:Connect(function(dt)
+    for _,data in ipairs(rainDrops) do
+        local drop = data.object
+        local pos = drop.Position
+
+        drop.Position = UDim2.new(
+            pos.X.Scale,
+            pos.X.Offset,
+            pos.Y.Scale,
+            pos.Y.Offset + data.speed * dt
+        )
+
+        if drop.Position.Y.Offset > 900 then
+            drop.Position = UDim2.new(
+                math.random(),
+                0,
+                0,
+                -20
+            )
+        end
+    end
+end)
+
+-- MAIN GUI
+local main = Instance.new("Frame")
+main.Size = UDim2.fromOffset(280,330)
+main.Position = UDim2.new(0.5,-140,0.5,-165)
+main.BackgroundColor3 = Color3.fromRGB(12,14,19)
+main.BackgroundTransparency = 0.08
+main.Active = true
+main.Parent = gui
+
+Instance.new("UICorner",main).CornerRadius = UDim.new(0,10)
+
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(65,90,115)
+stroke.Transparency = 0.5
+stroke.Parent = main
+
+-- CLOSE BUTTON
+local close = Instance.new("TextButton")
+close.Size = UDim2.fromOffset(27,27)
+close.Position = UDim2.new(1,-33,0,7)
+close.BackgroundColor3 = Color3.fromRGB(55,55,62)
+close.Text = "X"
+close.TextColor3 = Color3.new(1,1,1)
+close.Font = Enum.Font.GothamBold
+close.TextSize = 13
+close.Parent = main
+Instance.new("UICorner",close).CornerRadius = UDim.new(0,6)
+
+-- REOPEN BUTTON
+local reopen = Instance.new("TextButton")
+reopen.Size = UDim2.fromOffset(65,35)
+reopen.Position = UDim2.new(0,15,0.5,0)
+reopen.BackgroundColor3 = Color3.fromRGB(18,22,30)
+reopen.Text = "T1ST"
+reopen.TextColor3 = Color3.new(1,1,1)
+reopen.Font = Enum.Font.GothamBold
+reopen.TextSize = 14
+reopen.Visible = false
+reopen.Parent = gui
+Instance.new("UICorner",reopen).CornerRadius = UDim.new(0,7)
+
+close.MouseButton1Click:Connect(function()
+    main.Visible = false
+    reopen.Visible = true
+end)
+
+reopen.MouseButton1Click:Connect(function()
+    main.Visible = true
+    reopen.Visible = false
+end)
+
+-- DRAG SYSTEM
+local dragging = false
+local dragStart
+local startPosition
+
+local function makeDraggable(object)
+    object.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPosition = main.Position
+        end
+    end)
+end
+
+makeDraggable(main)
+
+UIS.InputChanged:Connect(function(input)
+    if dragging and (
+        input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch
+    ) then
+        local delta = input.Position - dragStart
+        main.Position = UDim2.new(
+            startPosition.X.Scale,
+            startPosition.X.Offset + delta.X,
+            startPosition.Y.Scale,
+            startPosition.Y.Offset + delta.Y
+        )
+    end
+end)
+
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+
+-- TITLE
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1,-40,0,40)
+title.Position = UDim2.fromOffset(0,0)
+title.BackgroundTransparency = 1
+title.Text = "T1ST DICE"
+title.TextColor3 = Color3.fromRGB(225,235,255)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 17
+title.Parent = main
+
+-- RESULT BOXES
+local boxes = {}
+
+for i=1,4 do
+    local box = Instance.new("Frame")
+    box.Size = UDim2.fromOffset(58,58)
+    box.Position = UDim2.fromOffset(12+(i-1)*65,48)
+    box.BackgroundColor3 = Color3.fromRGB(45,45,50)
+    box.Parent = main
+    Instance.new("UICorner",box).CornerRadius = UDim.new(0,7)
+    boxes[i] = box
+end
+
+local heading = Instance.new("TextLabel")
+heading.Size = UDim2.new(1,0,0,25)
+heading.Position = UDim2.fromOffset(0,115)
+heading.BackgroundTransparency = 1
+heading.Text = "SELECT COLORS"
+heading.TextColor3 = Color3.fromRGB(190,190,190)
+heading.Font = Enum.Font.GothamBold
+heading.TextSize = 12
+heading.Parent = main
+
+-- COLOR BUTTONS
+local buttons = {}
+local index = 0
+
+for name,color in pairs(colors) do
+    index += 1
+
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.fromOffset(76,32)
+    button.Position = UDim2.fromOffset(
+        13+((index-1)%3)*85,
+        145+math.floor((index-1)/3)*39
+    )
+    button.BackgroundColor3 = color
+    button.Text = name
+    button.TextColor3 = Color3.new(0,0,0)
+    button.Font = Enum.Font.GothamBold
+    button.TextSize = 12
+    button.Parent = main
+
+    Instance.new("UICorner",button).CornerRadius = UDim.new(0,6)
+
+    buttons[name] = button
+
+    button.MouseButton1Click:Connect(function()
+        enabled[name] = not enabled[name]
+        button.BackgroundTransparency = enabled[name] and 0 or 0.45
+    end)
+end
+
+-- ROLL
+local roll = Instance.new("TextButton")
+roll.Size = UDim2.fromOffset(120,37)
+roll.Position = UDim2.fromOffset(13,238)
+roll.BackgroundColor3 = Color3.fromRGB(45,130,255)
+roll.Text = "ROLL"
+roll.TextColor3 = Color3.new(1,1,1)
+roll.Font = Enum.Font.GothamBold
+roll.TextSize = 14
+roll.Parent = main
+Instance.new("UICorner",roll).CornerRadius = UDim.new(0,7)
+
+-- RESET
+local reset = Instance.new("TextButton")
+reset.Size = UDim2.fromOffset(120,37)
+reset.Position = UDim2.fromOffset(147,238)
+reset.BackgroundColor3 = Color3.fromRGB(48,48,54)
+reset.Text = "RESET"
+reset.TextColor3 = Color3.new(1,1,1)
+reset.Font = Enum.Font.GothamBold
+reset.TextSize = 14
+reset.Parent = main
+Instance.new("UICorner",reset).CornerRadius = UDim.new(0,7)
+
+roll.MouseButton1Click:Connect(function()
+    local available = {}
+
+    for name,color in pairs(colors) do
+        if enabled[name] then
+            table.insert(available,color)
+        end
+    end
+
+    if #available == 0 then return end
+
+    for i=1,4 do
+        boxes[i].BackgroundColor3 =
+            available[math.random(1,#available)]
+    end
+end)
+
+reset.MouseButton1Click:Connect(function()
+    for _,box in ipairs(boxes) do
+        box.BackgroundColor3 = Color3.fromRGB(45,45,50)
+    end
+
+    for name in pairs(colors) do
+        enabled[name] = true
+        buttons[name].BackgroundTransparency = 0
+    end
+end)
